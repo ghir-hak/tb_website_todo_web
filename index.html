@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #18181c;
+      --border: #2a2a30;
+      --text: #f4f4f5;
+      --text-muted: #71717a;
+      --accent: #22d3ee;
+      --accent-dim: #0891b2;
+      --danger: #f43f5e;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.12), transparent);
+    }
+    .container {
+      width: 100%;
+      max-width: 480px;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]::placeholder {
+      color: var(--text-muted);
+    }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    button {
+      font-family: inherit;
+      font-weight: 500;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-add {
+      background: var(--accent);
+      color: var(--bg);
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+    }
+    .btn-add:hover:not(:disabled) {
+      background: var(--accent-dim);
+    }
+    .todo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .todo-item.done .todo-text {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+    .todo-check {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .todo-item.done .todo-check {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    .todo-item.done .todo-check::after {
+      content: "✓";
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .todo-text {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+    .btn-delete {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 0.4rem;
+      font-size: 1.1rem;
+    }
+    .btn-delete:hover {
+      color: var(--danger);
+    }
+    .empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 3rem;
+      font-size: 0.95rem;
+    }
+    .error {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Todo</h1>
+    <p class="subtitle">Add tasks and mark them done</p>
+    <div id="error" class="error" style="display:none;"></div>
+    <div class="input-row">
+      <input type="text" id="input" placeholder="What needs to be done?" autocomplete="off" enterkeyhint="done">
+      <button type="button" class="btn-add" id="add">Add</button>
+    </div>
+    <div class="todo-list" id="list"></div>
+  </div>
+  <script>
+    const API_BASE = 'https://ktudhvdv0.default.localtau';
+    const listEl = document.getElementById('list');
+    const inputEl = document.getElementById('input');
+    const addBtn = document.getElementById('add');
+    const errorEl = document.getElementById('error');
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = msg ? 'block' : 'none';
+    }
+
+    async function api(path, opts = {}) {
+      try {
+        const res = await fetch(API_BASE + path, {
+          ...opts,
+          headers: { 'Content-Type': 'application/json', ...opts.headers }
+        });
+        const data = res.ok ? await res.json().catch(() => ({})) : await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        return data;
+      } catch (e) {
+        showError(e.message || 'Network error');
+        throw e;
+      }
+    }
+
+    function render(todos) {
+      listEl.innerHTML = '';
+      if (!todos || !todos.length) {
+        listEl.innerHTML = '<div class="empty">No todos yet. Add one above.</div>';
+        return;
+      }
+      todos.forEach(t => {
+        const div = document.createElement('div');
+        div.className = 'todo-item' + (t.completed ? ' done' : '');
+        div.dataset.id = t.id;
+        div.innerHTML = `
+          <div class="todo-check"></div>
+          <span class="todo-text">${escapeHtml(t.text)}</span>
+          <button type="button" class="btn-delete" aria-label="Delete">×</button>
+        `;
+        div.querySelector('.todo-check').onclick = () => toggle(t);
+        div.querySelector('.btn-delete').onclick = () => remove(t.id);
+        listEl.appendChild(div);
+      });
+    }
+
+    function escapeHtml(s) {
+      const el = document.createElement('span');
+      el.textContent = s;
+      return el.innerHTML;
+    }
+
+    async function load() {
+      showError('');
+      const todos = await api('/api/todos');
+      render(Array.isArray(todos) ? todos : []);
+    }
+
+    async function add() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      addBtn.disabled = true;
+      showError('');
+      try {
+        await api('/api/todos', { method: 'POST', body: JSON.stringify({ text }) });
+        inputEl.value = '';
+        await load();
+      } finally {
+        addBtn.disabled = false;
+      }
+    }
+
+    async function toggle(t) {
+      showError('');
+      await api('/api/todos', {
+        method: 'PUT',
+        body: JSON.stringify({ id: t.id, completed: !t.completed })
+      });
+      await load();
+    }
+
+    async function remove(id) {
+      showError('');
+      await api('/api/todos?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      await load();
+    }
+
+    addBtn.onclick = add;
+    inputEl.onkeydown = e => { if (e.key === 'Enter') add(); };
+    load();
+  </script>
+</body>
+</html>
