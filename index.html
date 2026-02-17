@@ -175,7 +175,8 @@
     <div class="todo-list" id="list"></div>
   </div>
   <script>
-    const API_BASE = 'https://ktudhvdv0.default.localtau';
+    // API domain (same protocol/port as page; Dream uses HTTP + gateway port)
+    const API_BASE = (location.protocol || 'http:') + '//ktudhvdv0.default.localtau' + (location.port ? ':' + location.port : '');
     const listEl = document.getElementById('list');
     const inputEl = document.getElementById('input');
     const addBtn = document.getElementById('add');
